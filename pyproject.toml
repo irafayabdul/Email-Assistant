@@ -1,0 +1,35 @@
+[project]
+name = "Email-Assistant"
+version = "0.1.0"
+description = "An extraction Agent prototype to extract labelled Emails from Gmail and structure it using LLM to place it in a Notion database."
+license = "MIT"
+authors = [
+    {name = "Abdul Rafay",email = "irafayabdul@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+
+
+[tool.poetry]
+packages = [
+    { include = "email_assistant", from = "python" }
+]
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+black = "^25.1.0"
+flake8 = "^7.3.0"
+pre-commit = "^4.2.0"
+python-dotenv = "^1.1.1"
+mypy = "^1.17.1"
+notion-client = { version = "^2.4.0", python = ">=3.11,<4" }
+google-api-python-client = "^2.178.0"
+google-auth-oauthlib = "^1.2.2"
+google-auth-httplib2 = "^0.2.0"
+requests = "^2.32.4"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,35 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+    -   id: trailing-whitespace         # Trims trailing whitespace.
+    -   id: end-of-file-fixer           # Ensures files end with a newline.
+    -   id: check-yaml                  # Checks YAML files for syntax errors.
+    -   id: check-added-large-files     # Prevents committing large files (>5MB).
+    -   id: debug-statements            # Checks for leftover debug statements.
+
+-   repo: https://github.com/psf/black
+    rev: 25.1.0
+    hooks:
+    -   id: black
+
+-   repo: https://github.com/pycqa/flake8
+    rev: 7.3.0
+    hooks:
+    -   id: flake8
+        args: [--config=.flake8]
+
+-   repo: https://github.com/asottile/reorder-python-imports
+    rev: v3.15.0
+    hooks:
+    -   id: reorder-python-imports
+        args: [
+            --application-directories, '.:python',
+            --py39-plus, --add-import, 'from __future__ import annotations',
+        ]
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 'v1.17.1'
+    hooks:
+    -   id: mypy
+        args: [--config-file, mypy.ini]
