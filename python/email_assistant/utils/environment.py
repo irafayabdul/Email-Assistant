@@ -13,7 +13,24 @@ class Environment:
     for the Email Assistant."""
 
     @staticmethod
-    def load_env_variable(name: str, fallback: Optional[str] = None) -> Optional[str]:
+    def load_env_variable(
+        name: str, fallback: Optional[str] | Optional[int] = None
+    ) -> Optional[str] | Optional[int]:
         return os.getenv(name, fallback)
 
-    # --- Variables ---
+    # --- API Keys ---
+    @staticmethod
+    def get_notion_api_key() -> Optional[str] | Optional[int]:
+        return Environment.load_env_variable("NOTION_API_KEY")
+
+    @staticmethod
+    def get_notion_db_id() -> Optional[str] | Optional[int]:
+        return Environment.load_env_variable("NOTION_DATABASE_ID")
+
+    @staticmethod
+    def get_gmail_label() -> Optional[str] | Optional[int]:
+        return Environment.load_env_variable("GMAIL_LABEL_TO_POLL", "Zapped")
+
+    @staticmethod
+    def get_gmail_polling_interval() -> Optional[str] | Optional[int]:
+        return Environment.load_env_variable("POLLING_INTERVAL_SECONDS", 300)
