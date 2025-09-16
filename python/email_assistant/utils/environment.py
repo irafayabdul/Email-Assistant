@@ -29,7 +29,7 @@ class Environment:
 
     @staticmethod
     def get_gmail_label() -> Optional[str] | Optional[int]:
-        return Environment.load_env_variable("GMAIL_LABEL_TO_POLL", "Zapped")
+        return Environment.load_env_variable("GMAIL_LABEL_TO_POLL")
 
     @staticmethod
     def get_gmail_polling_interval() -> Optional[str] | Optional[int]:
