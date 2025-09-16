@@ -250,3 +250,16 @@ def get_email_details(service: Any, message_id: str) -> Optional[Dict[str, str]]
     except Exception as e:
         print(f"Could not parse email {message_id}: {e}")
         return None
+
+
+def remove_label_from_email(service: Any, message_id: str, label_id: str) -> bool:
+    """Removes a label from an email."""
+    try:
+        service.users().messages().modify(
+            userId="me", id=message_id, body={"removeLabelIds": [label_id]}
+        ).execute()
+        print(f"Successfully removed label from email {message_id}")
+        return True
+    except HttpError as error:
+        print(f"Error removing label from email {message_id}: {error}")
+        return False

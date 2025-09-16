@@ -182,6 +182,7 @@ cython_debug/
 .abstra/
 token.json
 credentials.json
+gmail_state.json
 
 
 # Visual Studio Code

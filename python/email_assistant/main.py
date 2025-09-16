@@ -54,7 +54,15 @@ def main() -> None:
 
             if extracted_data:
                 # 5. Add extracted data to Notion
-                notion_service.add_item_to_database(extracted_data)
+                success = notion_service.add_item_to_database(extracted_data)
+                if not success:
+                    # Remove the label from failed emails so they can be retried later
+                    print(f"Removing label '{gmail_label}' from failed email {msg_id}")
+                    gmail_service.remove_label_from_email(service, msg_id, label_id)
+            else:
+                # LLM extraction failed, remove label to allow retry
+                print(f"LLM extraction failed for email {msg_id}, removing label")
+                gmail_service.remove_label_from_email(service, msg_id, label_id)
 
 
 if __name__ == "__main__":

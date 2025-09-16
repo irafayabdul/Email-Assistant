@@ -21,16 +21,19 @@ def extract_info_from_email(email_content: str) -> dict | None:
 
     From the email below, extract these fields:
     - company_name: the company the user applied to
-    - application_date: the date the email was received (use the provided Received Date
-                        if present). Return as ISO 8601 date (YYYY-MM-DD) if possible,
-                        else include time.
+    - application_date: the date the email was received. Return the provided Received
+                        Date if available else Return the date found anywhere in the
+                        email in this format YYYY-MM-DD. Make sure to return the date
+                        in the correct format only, remove any trailing characters and
+                        spaces in the characters of date to make it a valid date in the
+                        format YYYY-MM-DD, if no date found Return 2000-01-01.
     - role: the job title applied for
 
     Return ONLY JSON with these exact keys: company_name, application_date, role.
 
     Email content:
     ---
-    {email_content[:4000]}
+    {email_content}
     ---
 
     JSON Output:
