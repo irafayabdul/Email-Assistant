@@ -1,15 +1,30 @@
 # Email-Assistant
 
-## 🚀 Getting Started
+Fetch job-related emails labeled as `Zapped`, extract structured info using a local LLM (Ollama), and add rows to a Notion database.
 
-This document will guide you through setting up your development environment for the Email-Assistant project.
+## What this does
+- Watches your Gmail for messages that were newly labeled with `Zapped`.
+- Sends each newly labeled email to an LLM to extract:
+  - Company Name
+  - Application Date (email received date)
+  - Role
+- Creates a row in your Notion database with those fields.
 
-### 📦 Dependency Management with Poetry
+First run initializes a Gmail history checkpoint and does not process previously labeled emails. After that, only newly labeled emails are processed.
 
-This project uses **Poetry** for dependency management and packaging. Poetry ensures that you have a consistent and reproducible development environment. The dependencies are defined in the `pyproject.toml` file and locked in the `poetry.lock` file.
+## Prerequisites
+- Python 3.11+
+- [Poetry](https://python-poetry.org/)
+- [Ollama](https://ollama.ai/) running locally (e.g., `ollama serve`)
+- A Notion database with properties named exactly:
+  - `Company Name` (title)
+  - `Application Date` (date)
+  - `Role` (rich_text)
+- A Gmail API OAuth client `credentials.json` in the project root (first run opens a browser to authorize and creates `token.json`).
 
-To install the project dependencies, you need to have Poetry installed. Then, run the following command in the root of the project:
+## Setup
 
+### 📦 Install dependencies (keep these commands)
 ```bash
 poetry install
 ```
@@ -21,34 +36,51 @@ For tox testing but avoiding conflict with dev dependencies, run the following c
  pipx install tox
 ```
 
-This will create a virtual environment inside the project's root directory and install all the necessary dependencies.
-
-### ✅ Code Quality with Pre-commit Hooks
-
-We use **pre-commit** hooks to ensure code quality and consistency before any code is committed. The hooks are configured in the `.pre-commit-config.yaml` file and include:
-
-  * **`black`**: An opinionated code formatter.
-  * **`flake8`**: A tool to check for style and quality issues.
-  * **`reorder-python-imports`**: A tool to automatically sort imports.
-  * **`mypy`**: A static type checker.
-
-To set up the pre-commit hooks, run the following command after installing the dependencies:
-
+### ✅ Pre-commit hooks (optional but recommended)
 ```bash
 pre-commit install
 ```
 
-Now, the hooks will run automatically every time you make a commit.
-
-### 🧪 Testing with Tox
-
-We use **Tox** to automate and standardize testing in isolated environments. The `tox.ini` file is configured to run the following checks:
-
-  * **`lint`**: Runs all pre-commit hooks to check for code quality.
-  * **`mypy`**: Runs the static type checker.
-
-To run all the checks, simply execute the following command:
-
+### 🧪 Run checks with Tox (optional)
 ```bash
 tox
 ```
+
+### 🔑 Configure environment
+Create a `.env` file in the project root (or set env vars another way):
+```
+NOTION_API_KEY=your_notion_integration_secret
+NOTION_DATABASE_ID=your_database_id
+
+# Optional, defaults shown
+GMAIL_LABEL_TO_POLL=Zapped
+POLLING_INTERVAL_SECONDS=300
+```
+
+Place your Gmail OAuth client secrets as `credentials.json` in the project root.
+
+### 🤖 Pull a small local model
+Choose any local model you have. The code defaults to `qwen2.5:3b` in Ollama. Example:
+```bash
+ollama pull qwen3:4b
+```
+
+## Run the service
+```bash
+poetry run python -m email_assistant.main
+```
+
+You should see logs like:
+```
+Starting Gmail to Notion Automation Service.
+Polling every 300 seconds. Press Ctrl+C to stop.
+Polling for newly labeled emails with label: 'Zapped'
+```
+
+When you apply the `Zapped` label to an email in Gmail, the service will:
+1) detect it via Gmail History API, 2) extract fields via Ollama, 3) add a row to Notion.
+
+## Notes
+- The service stores a Gmail checkpoint in `gmail_state.json` to avoid reprocessing.
+- If your Notion property names differ, update them in `python/email_assistant/services/notion_service.py`.
+- If you want a different model, change it in `python/email_assistant/services/llm_service.py`.
