@@ -3,7 +3,9 @@ from __future__ import annotations
 import base64
 import json
 import os.path
+import re
 from email.utils import parsedate_to_datetime
+from html import unescape
 from typing import Any
 from typing import cast
 from typing import Dict
@@ -16,7 +18,6 @@ from google.oauth2.credentials import Credentials  # type: ignore[import-not-fou
 from google_auth_oauthlib.flow import InstalledAppFlow  # type: ignore[import-not-found]
 from googleapiclient.discovery import build  # type: ignore[import-not-found]
 from googleapiclient.errors import HttpError  # type: ignore[import-not-found]
-
 
 # The file token.json stores the user's access and refresh tokens.
 # It is created automatically when the authorization flow completes for the first time.
@@ -162,6 +163,62 @@ def get_newly_labeled_message_ids(service: Any, label_id: str) -> List[str]:
     return list(collected_ids)
 
 
+def _decode_part_data(part: Dict[str, Any]) -> str:
+    data = part.get("body", {}).get("data", "")
+    if not data:
+        return ""
+    try:
+        return base64.urlsafe_b64decode(data).decode("utf-8", errors="replace")
+    except Exception:
+        return ""
+
+
+def _html_to_text(html: str) -> str:
+    # naive but effective for LLM input
+    text = re.sub(r"(?is)<(script|style).*?>.*?</\\1>", "", html)
+    text = re.sub(r"(?is)<br\\s*/?>", "\n", text)
+    text = re.sub(r"(?is)</p\\s*>", "\n\n", text)
+    text = re.sub(r"(?is)<.*?>", "", text)
+    return unescape(text).strip()
+
+
+def _extract_body_from_payload(payload: Dict[str, Any]) -> str:
+    # 1) If single-part
+    if "parts" not in payload:
+        return _decode_part_data(payload)
+
+    plain_candidates: List[str] = []
+    html_candidates: List[str] = []
+
+    def walk(part: Dict[str, Any]) -> None:
+        mime = part.get("mimeType", "")
+        if "parts" in part:
+            for p in part["parts"]:
+                walk(p)
+            return
+
+        content = _decode_part_data(part)
+        if not content:
+            return
+
+        if mime.startswith("text/plain"):
+            plain_candidates.append(content)
+        elif mime.startswith("text/html"):
+            html_candidates.append(content)
+
+    for p in payload.get("parts", []):
+        walk(p)
+
+    if plain_candidates:
+        return "\n\n".join(plain_candidates).strip()
+    if html_candidates:
+        html_text = "\n\n".join(html_candidates)
+        return _html_to_text(html_text)
+
+    # Fallback: sometimes the 'body' sits on a container part
+    return _decode_part_data(payload)
+
+
 def get_email_details(service: Any, message_id: str) -> Optional[Dict[str, str]]:
     """Gets the content of a single email."""
     try:
@@ -179,24 +236,15 @@ def get_email_details(service: Any, message_id: str) -> Optional[Dict[str, str]]
         sender = next(h["value"] for h in headers if h["name"].lower() == "from")
         date_header = next(h["value"] for h in headers if h["name"].lower() == "date")
         received_dt = parsedate_to_datetime(date_header)
-        received_iso = received_dt.isoformat()
+        received_date = received_dt.date().isoformat()
 
-        body = ""
-        if "parts" in payload:
-            for part in payload["parts"]:
-                if part["mimeType"] == "text/plain":
-                    encoded_body = part["body"].get("data", "")
-                    body = base64.urlsafe_b64decode(encoded_body).decode("utf-8")
-                    break
-        else:
-            encoded_body = payload["body"].get("data", "")
-            body = base64.urlsafe_b64decode(encoded_body).decode("utf-8")
+        body = _extract_body_from_payload(payload)
 
         return {
             "id": message_id,
             "sender": sender,
             "subject": subject,
-            "received_date": received_iso,
+            "received_date": received_date,
             "body": body,
         }
     except Exception as e:
