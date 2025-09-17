@@ -14,11 +14,11 @@ def add_item_to_database(data: dict) -> bool:
     - Application Date (date)
     - Role (rich_text or title)
     """
-    if not all(
-        k in data and data[k] for k in ["company_name", "application_date", "role"]
-    ):
-        print("Extracted data is missing required keys. Skipping Notion entry.")
-        return False
+    # if not all(
+    #     k in data and data[k] for k in ["company_name", "application_date", "role"]
+    # ):
+    #     print("Extracted data is missing required keys. Skipping Notion entry.")
+    #     return False
 
     try:
         notion = notion_client.Client(auth=str(Environment.get_notion_api_key()))
